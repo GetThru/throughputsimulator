@@ -1,7 +1,7 @@
 /*************************************
  * DEV MODE (auto-fill form for testing)
  *************************************/
-const DEV_MODE = true; // change to true when testing
+const DEV_MODE = false; // change to true when testing
 
 if (DEV_MODE) {
   window.addEventListener("DOMContentLoaded", () => {
