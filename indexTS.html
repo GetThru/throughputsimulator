@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>10DLC Throughput Simulator</title>
+  <link rel="icon" href="C:\Users\bchaa\OneDrive\Desktop\Throughput Simulator\favicon.png" type="image/x-icon">
+  <link rel="stylesheet" href="styleTS.css">
+</head>
+
+<body>
+
+<div class="banner">
+  <img src="C:\Users\bchaa\OneDrive\Desktop\Throughput Simulator\getthru-logo_2021_full-color.png"
+       alt="GetThru Logo" class="logo">
+</div>
+
+  <h1>10DLC Throughput Simulator</h1>
+<p class="subtitle">Use this simulator to estimate how long it will take to send your messages.<br>These values are estimates only. Brands that share an EIN will share limits, which is not captured in these estimates.</p>
+
+<div class="instructions">
+  <button type="button" id="toggleInstructions" class="collapsible-btn">
+    How to use this simulator ▼
+  </button>
+
+  <div id="instructionsContent">
+    <p>Enter your details in the left panel and view the results on the right.
+    </p>
+    <p><strong>Step 1:</strong> Upload a 
+      <a href="https://help.getthru.io/support/solutions/articles/44001063790-group-exports" target="_blank" rel="noopener noreferrer">
+        Group Export</a>, or enter a contact count, and click <strong><em>Generate Carrier Breakdown</em></strong>.
+    </p>
+
+    <p><strong>Step 2:</strong> Get your tax exempt status, vetting score, and use case from your 
+      <a href="https://help.getthru.io/support/solutions/articles/44002252937-brand-registration" target="_blank" rel="noopener noreferrer">
+        Brand Registration Page
+      </a> and click <strong><em>Generate Rate Limit Summary</em></strong>.
+    </p>
+
+    <p><strong>Step 3:</strong> Craft your initial message and set the delivery window and click <strong><em>Run Delivery Simulation</em></strong> to view duration and estimated throughput.</p>
+
+    <p class="note">
+      You can change any inputs and regenerate results to see how different factors affect your delivery speed.
+    </p>
+  </div>
+</div>
+
+
+  <div class="main-layout">
+    <div class="input-panel">
+
+      <section>
+        <h2><span class="step-number">1</span> Contacts</h2>
+        <p class="note">Choose one method for providing contact data (CSV or manual count).</p>
+
+        <label for="csvUpload">Upload Group Export CSV</label>
+        <div class="input-with-badge">
+          <input type="file" id="csvUpload" accept=".csv">
+        </div>
+
+        <div class="input-divider"><span>or</span></div>
+
+        <label for="contactCount">Contact Count <span style="color:#d00">*</span></label>
+        <div class="input-with-badge">
+          <input type="number" id="contactCount" placeholder="Enter total contacts">
+          <span id="manualModeBadge" class="mode-badge hidden">Manual mode</span>
+          <span id="csvModeBadge" class="mode-badge hidden">Locked by CSV</span>
+        </div>
+
+        <p id="contactWarning" class="warn hidden">
+          Heads up: The campaign max is 150,000 contacts. You can still simulate, but this exceeds the in-app limit.
+        </p>
+
+        
+
+<div class="advanced-mix">
+  <button type="button" id="toggleMix" class="link-btn">
+    Advanced Carrier Mix (optional) ▼
+  </button>
+
+  <div id="mixPanel" class="hidden mix-panel">
+    <table>
+      <thead>
+        <tr><th>Carrier</th><th>Percent (%)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>T-Mobile</td><td><input type="number" id="mixTmo" min="0" max="100" step="0.1" value="37"></td></tr>
+        <tr><td>Verizon</td><td><input type="number" id="mixVz"  min="0" max="100" step="0.1" value="33"></td></tr>
+        <tr><td>AT&amp;T</td><td><input type="number" id="mixAtt" min="0" max="100" step="0.1" value="28"></td></tr>
+        <tr><td>US Cellular</td><td><input type="number" id="mixUs"  min="0" max="100" step="0.1" value="1"></td></tr>
+        <tr><td>Unknown</td><td><input type="number" id="mixUnk" min="0" max="100" step="0.1" value="1"></td></tr>
+        <tr class="total-row">
+          <td><strong>Total</strong></td>
+          <td><strong id="mixTotal">100 %</strong></td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="note">Adjust as needed — percentages must total 100 % before generating the carrier breakdown.</p>
+  </div>
+</div>
+
+<button id="generateCarrierMix">Generate Carrier Breakdown</button>
+
+      </section>
+
+      <section>
+        <h2><span class="step-number">2</span> Brand Information</h2>
+        <p class="note">Provide registration and vetting details to estimate carrier rate limits.</p>
+
+        <label for="taxexemptstatus">Tax Exempt Status <span style="color:#d00">*</span></label>
+        <select id="taxexemptstatus">
+          <option value="">Select...</option>
+          <option value="501c3">501c3</option>
+          <option value="501c4">501c4</option>
+          <option value="501c5">501c5</option>
+          <option value="501c6">501c6</option>
+          <option value="cvtoken">CV token</option>
+          <option value="government">Government (rare)</option>
+          <option value="n/a">N/A</option>
+        </select>
+
+        <label for="vettingScore">
+          Vetting Score <span id="vettingAsterisk" style="color:#d00">*</span>
+        </label>
+
+        <input type="number" id="vettingScore" min="0" max="100" placeholder="0–100">
+        <p id="vettingMsg" class="error hidden">Vetting score must be between 0 and 100.</p>
+
+        <label for="useCase">Use Case <span style="color:#d00">*</span></label>
+        <select id="useCase">
+          <option value="">Select...</option>
+          <option value="Charity">Charity</option>
+          <option value="Political">Political</option>
+          <option value="Customer Care">Customer Care</option>
+          <option value="Higher Education">Higher Education</option>
+          <option value="Polling & Voting">Polling & Voting</option>
+          <option value="Public Service Announcement">Public Service Announcement</option>
+        </select>
+        <p id="useCaseNote" class="note">
+          Available use cases depend on your tax exempt status.
+        </p>
+
+        <button id="generateRateLimits">Generate Rate Limit Summary</button>
+      </section>
+
+
+<section>
+  <h2><span class="step-number">3</span> Message Setup & Schedule</h2>
+  <p class="note">
+    Craft your initial message and define the sending windows.
+  </p>
+
+  <div class="subgroup">
+    <label>Message Type</label>
+    <div class="radio-group">
+      <label><input type="radio" name="messageType" id="smsType" value="sms" checked> SMS</label>
+      <label><input type="radio" name="messageType" id="mmsType" value="mms"> MMS</label>
+    </div>
+
+    <label for="initialMessage">Initial Message (SMS only)</label>
+    <textarea id="initialMessage" rows="6" placeholder="Type your initial message here..."></textarea>
+
+    <div id="segmentStats" class="note">
+      <p><strong>Total segments (approx):</strong> <span id="segmentTotal">0</span></p>
+      <p><strong>Characters remaining:</strong> <span id="charsRemaining">160/160</span></p>
+      <p><strong>Character set:</strong> <span id="charSet">N/A</span></p>
+    </div>
+  </div>
+
+  <hr class="subdivider">
+
+  <div class="subgroup">
+    <h3>Schedule</h3>
+
+    <div class="schedule-group highlight">
+      <div class="group-header">
+        <span class="group-title">Initial Message Sending Window</span>
+        <span class="group-subtext">The timeframe in which you can send initial messages.</span>
+      </div>
+      <div class="row">
+        <div>
+          <label for="startDate">Start Date & Time</label>
+          <input type="datetime-local" id="startDate">
+        </div>
+        <div>
+          <label for="endDate">End Date & Time</label>
+          <input type="datetime-local" id="endDate">
+        </div>
+      </div>
+    </div>
+
+    <div class="schedule-group">
+      <div class="group-header">
+        <span class="group-title">Conversation Window</span>
+        <span class="group-subtext">Controls the hours any messages can be sent each day.</span>
+      </div>
+      <div class="row">
+        <div>
+          <label for="openTime">Daily Open Time</label>
+          <input type="time" id="openTime" value="09:00">
+        </div>
+        <div>
+          <label for="closeTime">Daily Close Time</label>
+          <input type="time" id="closeTime" value="21:00">
+        </div>
+      </div>
+    </div>
+
+    <div class="sendstart-separator">
+      <label for="sendStartTime">Actual Send Start Time</label>
+      <input type="datetime-local" id="sendStartTime">
+      <p class="subtext">Defaults to your campaign start. Adjust if sending begins later.</p>
+    </div>
+  </div>
+
+  <button id="runTimeline">Run Delivery Simulation</button>
+</section>
+
+
+    </div>
+
+    <div class="output-panel">
+      <section>
+        <h2>Carrier Breakdown</h2>
+        <div id="carrierOutput">Please upload a CSV or enter a contact count.</div>
+      </section>
+
+      <section>
+        <h2>Rate Limit Summary</h2>
+        <div id="rateLimitOutput">Rate limits will appear here after generation.</div>
+      </section>
+
+      <section>
+  <h2>
+    Delivery Simulation
+    <span id="staleNotice" class="stale hidden">Inputs changed — run the simulation again to refresh results.</span>
+  </h2>
+  <p id="estimateNote" class="note hidden">
+  <em>Estimates only — actual throughput may differ based on carrier enforcement and EIN-level limits.</em>
+</p>
+<div id="simulationOutput">Run the simulation to estimate throughput.</div>
+
+</section>
+
+
+
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="scriptTS.js"></script>
+  <footer class="footer">
+  <p>Throughput Simulator © GetThru</p>
+  <p><a href="https://getthru.io" target="_blank">getthru.io</a></p>
+</footer>
+</body>
+</html>
