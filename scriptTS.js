@@ -1212,6 +1212,39 @@ if (content.classList.contains("hidden")) {
 
 });
 
+
+/*************************************
+ * Notify Google Sheet of usage
+ *************************************/
+async function logUsageToSheet() {
+  const payload = {
+    organization: document.getElementById("taxexemptstatus")?.value || "",
+    websiteURL: window.location.href,
+    websiteName: document.title,
+    state: "", // optional: you could add a dropdown for state later
+    sellRent: "", // optional
+    personalInfo: "", // optional
+    usage: document.body.innerHTML, // or something like summary text
+    contact: {
+      timestamp: new Date().toISOString()
+    }
+  };
+
+  try {
+    const response = await fetch("https://script.google.com/macros/s/AKfycbyZOHqO_Eb_RkTXZq6KgDXiizPK_zHFxb6bYdoQMdtqHpqhen6-gkara3AuxlXjS255/exec", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const text = await response.text();
+    console.log("Usage logged:", text);
+  } catch (err) {
+    console.error("Error logging usage:", err);
+  }
+}
+
+document.getElementById("runTimeline").addEventListener("click", logUsageToSheet);
+
 /*************************************
  * Mark Delivery Simulation as Stale — only after first run
  *************************************/
@@ -1254,3 +1287,4 @@ window.addEventListener("DOMContentLoaded", () => {
     runBtn.addEventListener("click", clearStale);
   }
 });
+
