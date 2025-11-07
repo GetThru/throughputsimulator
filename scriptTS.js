@@ -1218,6 +1218,7 @@ if (content.classList.contains("hidden")) {
  *************************************/
 async function logUsageToSheet() {
   const payload = {
+    toolName: "ThroughputSim"
     organization: document.getElementById("taxexemptstatus")?.value || "",
     websiteURL: window.location.href,
     websiteName: document.title,
@@ -1235,7 +1236,6 @@ async function logUsageToSheet() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
-      toolName: "ThroughputSim"
     });
     const text = await response.text();
     console.log("Usage logged:", text);
@@ -1288,6 +1288,7 @@ window.addEventListener("DOMContentLoaded", () => {
     runBtn.addEventListener("click", clearStale);
   }
 });
+
 
 
 
