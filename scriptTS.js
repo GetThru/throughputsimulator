@@ -1214,37 +1214,34 @@ if (content.classList.contains("hidden")) {
 
 
 /*************************************
- * Notify Google Sheet of usage
+ * Notify Google Sheet of usage (Throughput Sim)
  *************************************/
 async function logUsageToSheet() {
+  // Collect key simulator inputs only
   const payload = {
     toolName: "ThroughputSim",
-    organization: document.getElementById("taxexemptstatus")?.value || "",
-    websiteURL: window.location.href,
-    websiteName: document.title,
-    state: "", // optional: you could add a dropdown for state later
-    sellRent: "", // optional
-    personalInfo: "", // optional
-    usage: document.body.innerHTML, // or something like summary text
-    contact: {
-      timestamp: new Date().toISOString()
-    }
+    taxStatus: document.getElementById("taxexemptstatus")?.value || "",
+    vettingScore: document.getElementById("vettingScore")?.value || "",
+    useCase: document.getElementById("useCase")?.value || "",
+    messageType: document.querySelector('input[name="messageType"]:checked')?.value || "sms",
+    contactCount: document.getElementById("contactCount")?.value || "",
+    timestamp: new Date().toISOString()
   };
 
   try {
-    const response = await fetch("https://script.google.com/macros/s/AKfycbzK-4HloY5unzVkoY9I0O9QXR33oBb9E5qDLYy5AC5dk5Jn7iKnGTwMrynNVjKkwqI8/exec", {
+    await fetch("https://script.google.com/macros/s/AKfycbzK-4HloY5unzVkoY9I0O9QXR33oBb9E5qDLYy5AC5dk5Jn7iKnGTwMrynNVjKkwqI8/exec", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload)
     });
-    const text = await response.text();
-    console.log("Usage logged:", text);
+    console.log("✅ Throughput Simulator usage logged");
   } catch (err) {
-    console.error("Error logging usage:", err);
+    console.error("❌ Error logging usage:", err);
   }
 }
 
 document.getElementById("runTimeline").addEventListener("click", logUsageToSheet);
+
 
 /*************************************
  * Mark Delivery Simulation as Stale — only after first run
@@ -1288,6 +1285,7 @@ window.addEventListener("DOMContentLoaded", () => {
     runBtn.addEventListener("click", clearStale);
   }
 });
+
 
 
 
