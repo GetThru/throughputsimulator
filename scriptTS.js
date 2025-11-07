@@ -1218,7 +1218,7 @@ if (content.classList.contains("hidden")) {
  *************************************/
 async function logUsageToSheet() {
   const payload = {
-    toolName: "ThroughputSim"
+    toolName: "ThroughputSim",
     organization: document.getElementById("taxexemptstatus")?.value || "",
     websiteURL: window.location.href,
     websiteName: document.title,
@@ -1288,6 +1288,7 @@ window.addEventListener("DOMContentLoaded", () => {
     runBtn.addEventListener("click", clearStale);
   }
 });
+
 
 
 
