@@ -1231,10 +1231,11 @@ async function logUsageToSheet() {
   };
 
   try {
-    const response = await fetch("https://script.google.com/macros/s/AKfycbxppcuo-ca459zTxEs-L5Wt-SzDq0lSy70EvKu9V3ooXyKFi5KSTKAk_172YUQb8mFP/exec", {
+    const response = await fetch("https://script.google.com/macros/s/AKfycbzK-4HloY5unzVkoY9I0O9QXR33oBb9E5qDLYy5AC5dk5Jn7iKnGTwMrynNVjKkwqI8/exec", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
+      toolName: "ThroughputSim"
     });
     const text = await response.text();
     console.log("Usage logged:", text);
@@ -1287,6 +1288,7 @@ window.addEventListener("DOMContentLoaded", () => {
     runBtn.addEventListener("click", clearStale);
   }
 });
+
 
 
 
