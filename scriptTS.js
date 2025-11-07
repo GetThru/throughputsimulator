@@ -1231,7 +1231,7 @@ async function logUsageToSheet() {
   };
 
   try {
-    const response = await fetch("https://script.google.com/macros/s/AKfycbxDbvw0vsLRLF2Mj_SuP4R7uVRuYXCsRZU9vXspzkhplP51NP7iUKweZzS236FX0T2H/exec", {
+    const response = await fetch("https://script.google.com/macros/s/AKfycbxppcuo-ca459zTxEs-L5Wt-SzDq0lSy70EvKu9V3ooXyKFi5KSTKAk_172YUQb8mFP/exec", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -1287,5 +1287,6 @@ window.addEventListener("DOMContentLoaded", () => {
     runBtn.addEventListener("click", clearStale);
   }
 });
+
 
 
