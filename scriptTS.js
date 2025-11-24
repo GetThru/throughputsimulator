@@ -17,7 +17,6 @@ if (DEV_MODE) {
   });
 }
 
-
 /*************************************
  * CSV Upload
  *************************************/
@@ -100,33 +99,61 @@ mmsRadio.addEventListener("change", toggleMessageInput);
 messageBox.addEventListener("input", updateSegmentStats);
 
 function toggleMessageInput() {
+  const group = document.getElementById("messageInputGroup");
+  const mmsNote = document.getElementById("mmsNotice");
+
   if (mmsRadio.checked) {
-    messageBox.value = "";
-    messageBox.disabled = true;
-    updateSegmentStats();
+    // Hide the entire message form
+    group.classList.add("hidden");
+
+    // Show MMS note in its place
+    mmsNote.classList.remove("hidden");
+
+    // Update segment stats for MMS
+    segmentTotalEl.textContent = "1";
+    charsRemainingEl.textContent = "N/A";
+    charSetEl.textContent = "MMS selected — 1 segment";
+
   } else {
+    // Show message form
+    group.classList.remove("hidden");
+
+    // Hide MMS note
+    mmsNote.classList.add("hidden");
+
+    // Reset message box
     messageBox.disabled = false;
+    messageBox.placeholder = "Type your initial message here...";
+
     updateSegmentStats();
   }
 }
 
+
+
 function updateSegmentStats() {
   const text = messageBox.value || "";
   if (mmsRadio.checked) {
-    const length = [...text].length;
-    const remaining = Math.max(0, MAX_MMS_GRAPHEMES - length);
+
+    // MMS is always 1 segment
     segmentTotalEl.textContent = "1";
-    charsRemainingEl.textContent = `${remaining}/${MAX_MMS_GRAPHEMES}`;
-    charSetEl.textContent = "MMS (fixed 1 segment)";
+
+    // No character counting needed
+    charsRemainingEl.textContent = "N/A";
+
+    // Make this VERY obvious in the UI
+    charSetEl.textContent = "MMS selected: always 1 segment - message not required";
+
     return;
   }
+
 
   // SMS logic
   const { encoding, characterCount, segmentCount, charsRemaining, charsPerSegment } = getSegmentStats(text);
 
   segmentTotalEl.textContent = segmentCount;
   charsRemainingEl.textContent = `${charsRemaining}/${charsPerSegment}`;
-  charSetEl.textContent = encoding === "gsm_7" ? "GSM-7" : "Unicode";
+  charSetEl.textContent = encoding === "gsm_7" ? "7-bit" : "Unicode";
 }
 
 function getSegmentStats(message) {
@@ -199,8 +226,8 @@ let MODE = "NONE";
 let carrierCounts = { "AT&T": 0, "T-Mobile": 0, "Verizon": 0, "US Cellular": 0, "Unknown": 0 };
 let totalRows = 0;
 let totalContacts = 0; 
-let invalidPhoneRows = 0; 
 let duplicateRows = 0;
+let validThruTextRows = 0;
 
 function setModeCSV() {
   MODE = "CSV";
@@ -208,7 +235,6 @@ function setModeCSV() {
   csvInput.disabled = false;
   manualBadge?.classList.add('hidden');
   csvBadge?.classList.remove('hidden');
-  assumptionsNote?.classList.add('hidden');
 }
 
 function setModeManual() {
@@ -217,7 +243,6 @@ function setModeManual() {
   csvInput.disabled = true;
   csvBadge?.classList.add('hidden');
   manualBadge?.classList.remove('hidden');
-  assumptionsNote?.classList.remove('hidden');
 }
 
 function setModeNone() {
@@ -226,7 +251,6 @@ function setModeNone() {
   csvInput.disabled = false;
   csvBadge?.classList.add('hidden');
   manualBadge?.classList.add('hidden');
-  assumptionsNote?.classList.add('hidden');
 }
 
 function updateContactWarning(n) {
@@ -313,7 +337,6 @@ function applyManualMix(total) {
 
   totalContacts = total;
   totalRows = total;
-  invalidPhoneRows = 0;
   duplicateRows = 0;
 }
 
@@ -321,10 +344,9 @@ function applyManualMix(total) {
 /*************************************
  * CSV upload → CSV mode (locks count)
  *************************************/
-csvInput.addEventListener('change', (event) => {
-  const file = event.target.files[0];
-
-  if (!file) {
+csvInput.addEventListener("change", async (event) => {
+  const files = Array.from(event.target.files);
+  if (!files.length) {
     if (!contactInput.value) setModeNone();
     return;
   }
@@ -334,59 +356,65 @@ csvInput.addEventListener('change', (event) => {
   const mixSection = document.querySelector(".advanced-mix");
   if (mixSection) mixSection.classList.add("mix-disabled");
 
-
+  // reset counters
   carrierCounts = { "AT&T": 0, "T-Mobile": 0, "Verizon": 0, "US Cellular": 0, "Unknown": 0 };
-  totalRows = 0; totalContacts = 0; invalidPhoneRows = 0; duplicateRows = 0;
+  totalRows = 0;
+  totalContacts = 0;
+  duplicateRows = 0;
+  validThruTextRows = 0;
 
-  Papa.parse(file, {
-    header: true,
-    skipEmptyLines: true,
-    transformHeader: normalizeHeader,
-    complete: function(results) {
-      const rows = results.data || [];
-      totalRows = rows.length;
+  // Global dedupe across ALL files
+  const seen = new Set();
 
-      const fields = (results.meta?.fields || []).map(normalizeHeader);
-      if (!fields.includes(PHONE_HEADER) || !fields.includes(CARRIER_HEADER)) {
-        alert(`Expected headers not found.\nLooking for "${PHONE_HEADER}" and "${CARRIER_HEADER}".`);
-        return;
-      }
+  // Process each CSV one by one
+  for (const file of files) {
+    await new Promise((resolve) => {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: normalizeHeader,
+        complete: function (results) {
+          const rows = results.data || [];
+          totalRows += rows.length;
 
-      const seen = new Set();
+          const fields = (results.meta?.fields || []).map(normalizeHeader);
+          if (!fields.includes(PHONE_HEADER) || !fields.includes(CARRIER_HEADER)) {
+            alert(`Expected headers not found in ${file.name}.
+Looking for "${PHONE_HEADER}" and "${CARRIER_HEADER}".`);
+            return resolve();
+          }
 
-      for (const row of rows) {
-      const normalized = normalizePhone(row[PHONE_HEADER]);
-      if (!normalized) { invalidPhoneRows++; continue; }
+          for (const row of rows) {
+            if (String(row["thru_text_status"] || "").toLowerCase() === "invalid") continue;
+            if (String(row["thru_text_opt_out"] || "").toUpperCase() === "TRUE") continue;
 
-      if (seen.has(normalized)) { duplicateRows++; continue; }
-      seen.add(normalized);
+            validThruTextRows++;
 
-      const mapped = mapCarrier(row[CARRIER_HEADER]);
+            const normalized = normalizePhone(row[PHONE_HEADER]);
+            if (!normalized) continue;
 
+            if (seen.has(normalized)) {
+              duplicateRows++;
+              continue;
+            }
+            seen.add(normalized);
 
-      if (mapped === "Unknown") {
-        console.log("Unknown carrier raw value:", row[CARRIER_HEADER]);
-      }
+            const mapped = mapCarrier(row[CARRIER_HEADER]);
+            carrierCounts[mapped] = (carrierCounts[mapped] || 0) + 1;
+          }
 
-      if (carrierCounts[mapped] === undefined) {
-        carrierCounts["Unknown"]++;
-      } else {
-        carrierCounts[mapped]++;
-      }
-    }
+          resolve();
+        }
+      });
+    });
+  }
 
-
-      totalContacts = seen.size;
-
-
-      contactInput.value = totalContacts;
-      updateContactWarning(totalContacts);
-
-
-      outputContainer.textContent = "Please upload a CSV or enter a contact count.";
-    }
-  });
+  totalContacts = seen.size;
+  contactInput.value = totalContacts;
+  updateContactWarning(totalContacts);
+  outputContainer.textContent = "CSV files loaded. Click Generate Carrier Breakdown.";
 });
+
 
 /*************************************
  * Contact count typing → Manual mode
@@ -417,7 +445,6 @@ contactInput.addEventListener('input', () => {
   updateContactWarning(val);
   applyManualMix(val);
 
-  outputContainer.textContent = "Please upload a CSV or enter a contact count.";
 });
 
 /*************************************
@@ -521,14 +548,23 @@ function generateCarrierBreakdown() {
   });
 
   const meta = document.createElement("div");
-  meta.innerHTML = `
+meta.innerHTML = `
   <div><strong>Mode:</strong> ${MODE}</div>
   <div><strong>Total Rows:</strong> ${totalRows.toLocaleString()}</div>
-  <div><strong>Unique Contacts:</strong> ${totalContacts.toLocaleString()}</div>
   ${
     MODE === "CSV"
-      ? `<div><strong>Invalid phone rows:</strong> ${invalidPhoneRows}</div>
-         <div><strong>Duplicates filtered:</strong> ${duplicateRows}</div>`
+      ? `
+        <div><strong>Valid ThruText Contacts:</strong> ${validThruTextRows.toLocaleString()}</div>
+        <div><strong>Unique Contacts (after filtering + dedupe):</strong> ${totalContacts.toLocaleString()}</div>
+        <div><strong>Duplicates filtered:</strong> ${duplicateRows}</div>
+        `
+      : `
+        <div><strong>Total Contacts:</strong> ${totalContacts.toLocaleString()}</div>
+      `
+  }
+  ${
+    MODE === "CSV"
+      ? ""
       : (() => {
           const tmo = document.getElementById("mixTmo")?.value || 37;
           const vz  = document.getElementById("mixVz")?.value || 33;
@@ -731,6 +767,8 @@ document.getElementById("estimateNote")?.classList.remove("hidden");
   const open = document.getElementById("openTime").value;
   const close = document.getElementById("closeTime").value;
 
+  
+
   if (!start || !end || !sendStart || !open || !close || isNaN(start) || isNaN(end) || isNaN(sendStart)) {
     simOut.textContent = "Please complete all schedule fields, including Actual Send Start Time.";
     return;
@@ -914,9 +952,6 @@ const sBody = durationTable.querySelector("tbody");
 });
 
 
-
-
-
 const durationWrapper = document.createElement("div");
 durationWrapper.className = "table-wrapper";
 durationWrapper.appendChild(durationTable);
@@ -939,25 +974,25 @@ const segPerMsg = segmentsPerMessage || 1;
 const tmobileSegments = needs["T-Mobile"]?.toLocaleString() || "—";
 
 const detailsExplanation = `
-  <strong>How to read the Details column:</strong> The equation shows
-  <code>Total Segments ÷ Carrier Throughput</code>, where throughput is based on each carrier’s limit.<br>
-  For example, <code>${tmobileBacklog} ÷ ${tmobileDaily} = ${tmobileRatio}</code> means
+  <strong>How to read the Details column:</strong> The equation shows <br>
+  <code>Total Segments per carrier ÷ Carrier Throughput</code><br> where throughput is based on each carrier’s limit.<br>
+  <br>For example, <code>${tmobileBacklog} ÷ ${tmobileDaily} = ${tmobileRatio}</code> means
   ${tmobileBacklog} total segments would take ${tmobileRatio} days to send at
   ${tmobileDaily} segments per day for T-Mobile.
 `;
 
 const smsExplanation = `
-  <strong>How Total Segments is calculated:</strong> For SMS, each message may use multiple segments depending on
+  <strong>How Total Segments per carrier is calculated:</strong> For SMS, each message may use multiple segments depending on
   its length and encoding. The total segments per carrier are calculated as:<br>
-  <code>(Contacts × Segments per message)</code><br>
-  For example, <code>${tmobileContacts} × ${segPerMsg} = ${tmobileSegments}</code> total segments for T-Mobile.
+  <code>(Contacts × Total Segments per message)</code><br>
+  <br>For example, <code>${tmobileContacts} × ${segPerMsg} = ${tmobileSegments}</code> total segments for T-Mobile.
 `;
 
 const mmsExplanation = `
-  <strong>How Total Segments is calculated:</strong> For MMS, each message counts as one segment.
+  <strong>How Total Segments per carrier is calculated:</strong> For MMS, each message counts as one segment.
   The total segments per carrier are calculated as:<br>
-  <code>(Contacts × 1)</code><br>
-  For example, <code>${tmobileContacts} × 1 = ${tmobileSegments}</code> total segments for T-Mobile.
+  <code>(Contacts × Total Segments per message)</code><br>
+  <br>For example, <code>${tmobileContacts} × 1 = ${tmobileSegments}</code> total segments for T-Mobile.
 `;
 
 durationNote.innerHTML = `
@@ -966,7 +1001,37 @@ durationNote.innerHTML = `
   ${isMMS ? mmsExplanation : smsExplanation}
 `;
 
-simOut.appendChild(durationNote);
+
+
+const explanationWrapper = document.createElement("div");
+explanationWrapper.style.marginTop = "10px";
+explanationWrapper.style.marginBottom = "20px";
+
+explanationWrapper.innerHTML = `
+  <button type="button" class="collapsible-btn" style="margin-bottom: 5px;">
+    How these estimates are calculated ▼
+  </button>
+
+  <div class="hidden" id="durationExplanationContent">
+    ${durationNote.innerHTML}
+  </div>
+`;
+
+simOut.appendChild(explanationWrapper);
+
+const durationBtn = explanationWrapper.querySelector(".collapsible-btn");
+const durationContent = explanationWrapper.querySelector("#durationExplanationContent");
+
+durationBtn.addEventListener("click", () => {
+  const isHidden = durationContent.classList.contains("hidden");
+  durationContent.classList.toggle("hidden");
+
+  durationBtn.textContent = isHidden
+    ? "How these estimates are calculated ▲"
+    : "How these estimates are calculated ▼";
+});
+
+
 
 
 const separator = document.createElement("div");
@@ -975,7 +1040,15 @@ simOut.appendChild(separator);
 
 const dayHeader = document.createElement("h3");
 dayHeader.textContent = "Daily Delivery Simulation";
+
 simOut.appendChild(dayHeader);
+  const note = document.createElement("p");
+  note.className = "note";
+  note.innerHTML = `
+    <strong>Actual Send Start:</strong> ${new Date(sendStart).toLocaleString()}<br>
+    Messages unsent after ${new Date(lastDate).toLocaleString()} are marked as <strong>failed</strong>.
+  `;
+  simOut.appendChild(note);
 
 const summaryTable = document.createElement("table");
 summaryTable.innerHTML = `
@@ -999,14 +1072,25 @@ for (const r of results) {
     if (!(carrier in r.sent)) continue;
     const displayName = carrier === "AT&T" ? "AT&T / Unknown" : carrier;
     const tr = document.createElement("tr");
+
+    const failedVal = r.failed[carrier];
+    const queuedVal = r.queued[carrier];
+
     tr.innerHTML = `
       <td>${r.dayLabel}</td>
       <td>${displayName}</td>
       <td>${r.sent[carrier].toLocaleString()}</td>
-      <td>${r.queued[carrier].toLocaleString()}</td>
-      <td>${r.failed[carrier].toLocaleString()}</td>
+      <td class="${queuedVal > 0 ? 'queued-cell' : ''}">
+          ${queuedVal.toLocaleString()}
+      </td>
+      <td class="${failedVal > 0 ? 'failed-cell' : ''}">
+          ${failedVal.toLocaleString()}
+      </td>
     `;
+
     tbody.appendChild(tr);
+
+
   }
 }
 
@@ -1017,16 +1101,80 @@ dailyWrapper.className = "table-wrapper";
 dailyWrapper.appendChild(summaryTable);
 simOut.appendChild(dailyWrapper);
 
+// === What to do if messages fail (collapsible help BELOW the table) ===
+const failHelpWrapper = document.createElement("div");
+failHelpWrapper.style.marginTop = "15px";
+failHelpWrapper.style.marginBottom = "10px";
+
+failHelpWrapper.innerHTML = `
+  <button type="button" class="collapsible-btn" style="margin-bottom: 5px;">
+    What to do if messages fail ▼
+  </button>
+
+  <div class="hidden" id="failHelpContent">
+    <p>If the simulation shows <strong>failed</strong> messages (red cells), here’s what you can do:</p>
+    <ul>
+      <li><strong>Extend the Initial Message Sending Window</strong> — move the End Date.</li>
+      <li><strong>Start earlier</strong> — set an earlier Start Date & Time or Actual Send Start Time.</li>
+      <li><strong>Decrease segments per message</strong> — shorten your SMS message or switch to MMS.</li>
+      <li><strong>Contact <a href="mailto:support@getthru.io">support@getthru.io</a></strong> — reach out for more assistance.</li>
+
+    </ul>
+  </div>
+`;
+
+simOut.appendChild(failHelpWrapper);
+
+// Add toggle behavior
+const failBtn = failHelpWrapper.querySelector(".collapsible-btn");
+const failContent = failHelpWrapper.querySelector("#failHelpContent");
+
+failBtn.addEventListener("click", () => {
+  const isHidden = failContent.classList.contains("hidden");
+  failContent.classList.toggle("hidden");
+  failBtn.textContent = isHidden
+    ? "What to do if messages fail ▲"
+    : "What to do if messages fail ▼";
+});
 
 
-  const note = document.createElement("p");
-  note.className = "note";
-  note.innerHTML = `
-    <strong>Actual Send Start:</strong> ${new Date(sendStart).toLocaleString()}<br>
-    Messages unsent after ${new Date(lastDate).toLocaleString()} are marked as <strong>failed</strong>.
-  `;
-  simOut.appendChild(note);
 }
+
+// === Enforce valid Actual Send Start Time ===
+function enforceSendStartConstraints() {
+  const startInput = document.getElementById("startDate");
+  const endInput = document.getElementById("endDate");
+  const sendStartInput = document.getElementById("sendStartTime");
+  const openInput = document.getElementById("openTime");
+  const closeInput = document.getElementById("closeTime");
+
+  if (!startInput.value || !endInput.value || !openInput.value || !closeInput.value) return;
+
+  const start = new Date(startInput.value);
+  const end = new Date(endInput.value);
+
+  const [oh, om] = openInput.value.split(":").map(Number);
+  const [ch, cm] = closeInput.value.split(":").map(Number);
+
+  const min = new Date(start);
+  min.setHours(oh, om, 0, 0);
+
+  const max = new Date(end);
+  max.setHours(ch, cm, 0, 0);
+
+  const format = (d) => {
+    const pad = (n) => n.toString().padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  sendStartInput.min = format(min);
+  sendStartInput.max = format(max);
+
+  const current = new Date(sendStartInput.value);
+  if (current < min) sendStartInput.value = format(min);
+  if (current > max) sendStartInput.value = format(max);
+}
+
 
 /*************************************
  * Dynamic Use Case & Vetting Logic
@@ -1154,6 +1302,27 @@ window.addEventListener("DOMContentLoaded", () => {
     .addEventListener("click", simulateDelivery);
 });
 
+// === Run constraints when date/time inputs change ===
+document.addEventListener("DOMContentLoaded", () => {
+  const fields = [
+    "startDate", "endDate",
+    "openTime", "closeTime",
+    "sendStartTime"
+  ];
+
+  fields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener("change", enforceSendStartConstraints);
+      el.addEventListener("input", enforceSendStartConstraints);
+    }
+  });
+
+  // Run once on load (important for defaults)
+  enforceSendStartConstraints();
+});
+
+
 
 /*************************************
  * Default start/end/send date and time
@@ -1188,6 +1357,8 @@ document.addEventListener("DOMContentLoaded", () => {
     endInput.value = toLocalInputValue(end);
 
     sendStartInput.value = startValue;
+
+    enforceSendStartConstraints();
   }
   const toggleBtn = document.getElementById("toggleInstructions");
   const content = document.getElementById("instructionsContent");
@@ -1211,7 +1382,6 @@ if (content.classList.contains("hidden")) {
   }
 
 });
-
 
 /*************************************
  * Notify Google Sheet of usage (Throughput Sim)
@@ -1254,8 +1424,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
   function markStale() {
     if (!simulationHasRun) return; 
-    if (staleNotice && simOutput && simOutput.innerHTML.trim() !== "") {
+    if (staleNotice && simulationHasRun) {
+      staleNotice.textContent = "⚠️ Inputs changed — run the simulation again to refresh results.";
       staleNotice.classList.remove("hidden");
+
     }
   }
 
@@ -1285,12 +1457,3 @@ window.addEventListener("DOMContentLoaded", () => {
     runBtn.addEventListener("click", clearStale);
   }
 });
-
-
-
-
-
-
-
-
-
