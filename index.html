@@ -14,7 +14,7 @@
   <img src="getthru-logo_2021_full-color.png" alt="Logo" class="logo">
 </div>
 
-  <h1>10DLC Throughput Simulator</h1>
+<h1>10DLC Throughput Simulator</h1>
 <p class="subtitle">Use this simulator to estimate how long it will take to send your messages.<br>These values are estimates only. Brands that share an EIN will share limits, which is not captured in these estimates.</p>
 
 <div class="instructions">
@@ -54,7 +54,7 @@
 
         <label for="csvUpload">Upload Group Export CSV</label>
         <div class="input-with-badge">
-          <input type="file" id="csvUpload" accept=".csv">
+          <input type="file" id="csvUpload" accept=".csv" multiple>
         </div>
 
         <div class="input-divider"><span>or</span></div>
@@ -156,14 +156,22 @@
       <label><input type="radio" name="messageType" id="mmsType" value="mms"> MMS</label>
     </div>
 
-    <label for="initialMessage">Initial Message (SMS only)</label>
-    <textarea id="initialMessage" rows="6" placeholder="Type your initial message here..."></textarea>
+<div id="messageInputGroup">
+  <label for="initialMessage">Initial Message</label>
+  <textarea id="initialMessage" rows="6" placeholder="Type your initial message here..."></textarea>
 
-    <div id="segmentStats" class="note">
-      <p><strong>Total segments (approx):</strong> <span id="segmentTotal">0</span></p>
-      <p><strong>Characters remaining:</strong> <span id="charsRemaining">160/160</span></p>
-      <p><strong>Character set:</strong> <span id="charSet">N/A</span></p>
-    </div>
+  <div id="segmentStats" class="note">
+    <p><strong>Total segments (approx):</strong> <span id="segmentTotal">0</span></p>
+    <p><strong>Characters remaining:</strong> <span id="charsRemaining">160/160</span></p>
+    <p><strong>Character set:</strong> <span id="charSet">N/A</span></p>
+  </div>
+</div>
+
+<!-- NEW: Appears only in MMS mode -->
+<div id="mmsNotice" class="note hidden">
+  <strong>MMS selected — initial message not required (always 1 segment)</strong>
+</div>
+
   </div>
 
   <hr class="subdivider">
@@ -230,14 +238,18 @@
       </section>
 
       <section>
-  <h2>
-    Delivery Simulation
-    <span id="staleNotice" class="stale hidden">Inputs changed — run the simulation again to refresh results.</span>
-  </h2>
-  <p id="estimateNote" class="note hidden">
+<h2>
+  Delivery Simulation
+  <span id="staleNotice" class="stale hidden">Inputs changed — run the simulation again to refresh results.</span>
+</h2>
+
+<p id="estimateNote" class="note hidden">
   <em>Estimates only — actual throughput may differ based on carrier enforcement and EIN-level limits.</em>
 </p>
+
+
 <div id="simulationOutput">Run the simulation to estimate throughput.</div>
+
 
 </section>
 
