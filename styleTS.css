@@ -136,8 +136,6 @@ button:hover {
   margin-top: 6px;
 }
 
-.hidden { display: none; }
-
 
 .radio-group {
   display: flex;
@@ -272,17 +270,6 @@ button:hover {
   min-width: unset;
   width: 100%;
 }
-
-
-
-.table-wrapper {
-  overflow-x: auto;
-  border-radius: 8px;
-  margin-top: 8px;
-  margin-bottom: 16px;
-  -webkit-overflow-scrolling: touch;
-}
-
 
 .main-layout {
   display: grid;
@@ -580,9 +567,6 @@ button:hover {
   font-weight: 600;
 }
 
-.hidden {
-  display: none;
-}
 
 /* === Disabled state for Advanced Carrier Mix === */
 .mix-disabled {
@@ -834,39 +818,54 @@ section h2 {
 
 .stale {
   color: #92400e;
-  background: #fff7ed; 
+  background: #fff7ed;
   border: 1px solid #f59e0b;
   font-size: 14px;
   font-weight: 600;
-  padding: 4px 10px;
-  margin-left: 8px;
+  padding: 6px 12px;
   border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  animation: stalePulse 2s ease-in-out infinite;
+
   position: absolute;
   right: 15px;
   top: 0;
   transform: translateY(-120%);
-  background: #fff7ed;
-  border: 1px solid #f59e0b;
-  color: #92400e;
-  font-weight: 600;
-  padding: 6px 12px;
-  border-radius: 6px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   animation: stalePulse 2s ease-in-out infinite;
-  z-index: 5;
+
   pointer-events: none;
+  z-index: 5;
 }
 
-.stale::before {
-  content: "⚠️";
-  font-size: 15px;
+
+
+.failed-cell {
+  background-color: #fee2e2 !important; 
+  color: #b91c1c !important;         
+  font-weight: bold;
 }
 
+.queued-cell {
+  background-color: #fef9c3 !important; 
+  color: #92400e !important; 
+  font-weight: bold;
+}
+
+#durationExplanationContent p {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+#messageInputGroup,
+#mmsNotice {
+  transition: opacity 0.2s ease;
+  margin-top: 15px;
+}
 
 .hidden {
-  display: none;
+  display: none !important;
 }
