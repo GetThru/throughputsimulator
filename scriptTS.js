@@ -490,7 +490,7 @@ function getRateLimit(carrier, messageType, vetting, useCase, taxStatus) {
 
 
   if (carrier === "verizon") {
-    return { sms: 4500, mms: 1200, interval: "minute", label: "Standard Verizon" };
+    return { sms: 6000, mms: 1500, interval: "minute", label: "Standard Verizon" };
   }
 
 
@@ -1457,3 +1457,4 @@ window.addEventListener("DOMContentLoaded", () => {
     runBtn.addEventListener("click", clearStale);
   }
 });
+
