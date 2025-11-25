@@ -555,8 +555,8 @@ meta.innerHTML = `
     MODE === "CSV"
       ? `
         <div><strong>Valid ThruText Contacts:</strong> ${validThruTextRows.toLocaleString()}</div>
-        <div><strong>Unique Contacts (after filtering + dedupe):</strong> ${totalContacts.toLocaleString()}</div>
         <div><strong>Duplicates filtered:</strong> ${duplicateRows}</div>
+        <div><strong>Unique Contacts (after filtering + dedupe):</strong> ${totalContacts.toLocaleString()}</div>
         `
       : `
         <div><strong>Total Contacts:</strong> ${totalContacts.toLocaleString()}</div>
@@ -1457,4 +1457,5 @@ window.addEventListener("DOMContentLoaded", () => {
     runBtn.addEventListener("click", clearStale);
   }
 });
+
 
