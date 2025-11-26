@@ -456,11 +456,7 @@ function getRateLimit(carrier, messageType, vetting, useCase, taxStatus) {
   taxStatus = (taxStatus || "").toLowerCase();
 
   /******** AT&T ********/
-  if (carrier === "att" || carrier === "at&t") {
-
-    if (taxStatus === "501c3") {
-      return { sms: 2400, mms: 1200, interval: "minute", label: "Message Class Charity" };
-    }
+if (carrier === "att" || carrier === "at&t") {
 
     if (taxStatus === "government") {
       return { sms: 4500, mms: 2400, interval: "minute", label: "Government" };
@@ -469,15 +465,19 @@ function getRateLimit(carrier, messageType, vetting, useCase, taxStatus) {
     if (useCase === "political") {
       return { sms: 4500, mms: 2400, interval: "minute", label: "Political Use Case" };
     }
+
     if (useCase === "charity") {
       return { sms: 2400, mms: 1200, interval: "minute", label: "Charity Use Case" };
     }
 
+    if (taxStatus === "501c3") {
+      return { sms: 2400, mms: 1200, interval: "minute", label: "Message Class Charity" };
+    }
 
     if (vetting >= 75) return { sms: 4500, mms: 2400, interval: "minute", label: "Top Tier" };
     if (vetting >= 50) return { sms: 2400, mms: 1200, interval: "minute", label: "Mid Tier" };
     return { sms: 240, mms: 150, interval: "minute", label: "Low Tier" };
-  }
+}
 
 
   if (carrier === "tmobile" || carrier === "t-mobile") {
@@ -1461,6 +1461,7 @@ window.addEventListener("DOMContentLoaded", () => {
     runBtn.addEventListener("click", clearStale);
   }
 });
+
 
 
 
