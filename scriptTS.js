@@ -458,6 +458,10 @@ function getRateLimit(carrier, messageType, vetting, useCase, taxStatus) {
   /******** AT&T ********/
   if (carrier === "att" || carrier === "at&t") {
 
+    if (taxStatus === "501c3") {
+      return { sms: 2400, mms: 1200, interval: "minute", label: "Message Class Charity" };
+    }
+
     if (taxStatus === "government") {
       return { sms: 4500, mms: 2400, interval: "minute", label: "Government" };
     }
@@ -1457,5 +1461,6 @@ window.addEventListener("DOMContentLoaded", () => {
     runBtn.addEventListener("click", clearStale);
   }
 });
+
 
 
